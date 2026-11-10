@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atari Pong - Cloud Project</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { margin-bottom: 5px; }
+        #info-server {
+            font-size: 14px;
+            color: #00ffcc;
+            margin-bottom: 15px;
+        }
+
+        /* Contenedor del Canvas y Modal */
+        .canvas-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            border: 4px solid #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+            box-sizing: content-box;
+        }
+        canvas {
+            background-color: #000000;
+            display: block;
+        }
+
+        /* Overlay modal al terminar la partida */
+        .game-modal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.88);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        .game-modal h2 {
+            font-size: 32px;
+            margin: 0 0 10px 0;
+            color: #00ffcc;
+            letter-spacing: 2px;
+        }
+        .modal-winner {
+            font-size: 22px;
+            color: #ffd166;
+            margin: 5px 0;
+        }
+        .modal-score {
+            font-size: 18px;
+            color: #ffffff;
+            margin: 5px 0 15px 0;
+        }
+        .modal-status {
+            font-size: 13px;
+            color: #aaaaaa;
+            margin-bottom: 25px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Barra de acciones y botones arcade */
+        .game-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 15px;
+        }
+        .arcade-btn {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border: 2px solid #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            outline: none;
+        }
+        .arcade-btn:hover {
+            background-color: #00ffcc;
+            color: #000000;
+            box-shadow: 0 0 12px #00ffcc;
+        }
+        .arcade-btn.btn-pause {
+            border-color: #ffd166;
+            color: #ffd166;
+        }
+        .arcade-btn.btn-pause:hover {
+            background-color: #ffd166;
+            color: #000000;
+            box-shadow: 0 0 12px #ffd166;
+        }
+        .arcade-btn.btn-secondary {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .arcade-btn.btn-secondary:hover {
+            background-color: #ff6b6b;
+            color: #000000;
+            box-shadow: 0 0 12px #ff6b6b;
+        }
+
+        .controls {
+            margin-top: 15px;
+            display: flex;
+            gap: 30px;
+            font-size: 13px;
+            color: #bbbbbb;
+        }
+        .controls code {
+            color: #00ffcc;
+            background: #222;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        .scoreboard-table {
+            margin-top: 25px;
+            width: 650px;
+            border-collapse: collapse;
+            font-size: 12px;
+            text-align: center;
+        }
+        .scoreboard-table th, .scoreboard-table td {
+            border: 1px solid #444;
+            padding: 8px;
+        }
+        .scoreboard-table th { background-color: #222; }
+    </style>
+</head>
+<body>
+    <h1>ATARI PONG</h1>
+    <div id="info-server">Servidor conectado: Obteniendo...</div>
+    
+    <div class="canvas-container">
+        <canvas id="pongCanvas" width="800" height="450"></canvas>
+
+        <!-- Apartado / Modal al finalizar partida -->
+        <div id="game-modal" class="game-modal" style="display: none;">
+            <h2 id="modal-title">PARTIDA FINALIZADA</h2>
+            <div id="modal-winner" class="modal-winner">Ganador: Jugador 1</div>
+            <div id="modal-score" class="modal-score">Marcador: 5 - 3</div>
+            <div id="modal-status" class="modal-status">Guardando resultado en el backend...</div>
+            <div class="modal-buttons">
+                <button id="btn-modal-replay" class="arcade-btn">🎮 Jugar otra partida</button>
+                <button id="btn-modal-pause" class="arcade-btn btn-pause">⏸️ Pausar juego</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de Control de Partida -->
+    <div class="game-actions">
+        <button id="btn-toggle-pause" class="arcade-btn btn-pause">⏸️ Pausar Juego</button>
+        <button id="btn-restart" class="arcade-btn btn-secondary">🔄 Reiniciar Partida</button>
+    </div>
+
+    <div class="controls">
+        <div><strong>Jugador 1 (Azul):</strong> <code>W</code> / <code>S</code></div>
+        <div><strong>Jugador 2 (Amarillo):</strong> <code>↑</code> / <code>↓</code></div>
+        <div><strong>Pausar:</strong> <code>P</code> o <code>Espacio</code></div>
+    </div>
+
+    <h3>Últimas Partidas (Persistencia en Base de Datos)</h3>
+    <table class="scoreboard-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Resultado</th>
+                <th>Ganador</th>
+                <th>Instancia Backend</th>
+                <th>Fecha</th>
+            </tr>
+        </thead>
+        <tbody id="historial-body">
+            <tr><td colspan="5">Cargando datos...</td></tr>
+        </tbody>
+    </table>
+
+    <script src="/static/game.js" onerror="this.onerror=null; this.src='game.js';"></script>
+</body>
+</html>

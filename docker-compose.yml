@@ -1,0 +1,114 @@
+services:
+  # 1. Base de datos PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: pong_db
+    environment:
+      TZ: America/Bogota
+      POSTGRES_DB: pongdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - red_cloud
+
+  # 2. Instancia 1 del Backend
+  backend1:
+    build: .
+    container_name: pong_backend_1
+    environment:
+      TZ: America/Bogota
+      DB_HOST: db
+      DB_NAME: pongdb
+      DB_USER: postgres
+      DB_PASS: postgres123
+    volumes:
+      - shared_logs:/var/log/app
+    command: sh -c "gunicorn --bind 0.0.0.0:5000 --access-logfile /var/log/app/backend1.log --error-logfile /var/log/app/backend1.log app:app"
+    depends_on:
+      - db
+    networks:
+      - red_cloud
+
+  # 3. Instancia 2 del Backend
+  backend2:
+    build: .
+    container_name: pong_backend_2
+    environment:
+      TZ: America/Bogota
+      DB_HOST: db
+      DB_NAME: pongdb
+      DB_USER: postgres
+      DB_PASS: postgres123
+    volumes:
+      - shared_logs:/var/log/app
+    command: sh -c "gunicorn --bind 0.0.0.0:5000 --access-logfile /var/log/app/backend2.log --error-logfile /var/log/app/backend2.log app:app"
+    depends_on:
+      - db
+    networks:
+      - red_cloud
+
+  # 4. Balanceador NGINX
+  loadbalancer:
+    image: nginx:alpine
+    container_name: pong_balancer
+    environment:
+      TZ: America/Bogota
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend1
+      - backend2
+    networks:
+      - red_cloud
+
+  # 5. Loki
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: pong_loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - red_cloud
+
+  # 6. Promtail
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: pong_promtail
+    volumes:
+      - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - shared_logs:/var/log/app:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - red_cloud
+
+  # 7. Grafana
+  grafana:
+    image: grafana/grafana:latest
+    container_name: pong_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: America/Bogota
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: America/Bogota
+    depends_on:
+      - loki
+    networks:
+      - red_cloud
+
+volumes:
+  postgres_data:
+  shared_logs:
+
+networks:
+  red_cloud:
+    driver: bridge
