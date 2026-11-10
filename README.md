@@ -111,7 +111,7 @@ proyecto-cloud-pong/
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/TU_USUARIO/proyecto-cloud-pong.git
+git clone https://github.com/Brahian-Nova/proyecto-cloud-pong.git
 cd proyecto-cloud-pong
 ```
 
@@ -143,7 +143,8 @@ docker compose up -d --build
 
 ## 👨‍💻 Autor
 
-Proyecto desarrollado como parte de mi **portafolio académico y profesional** en Ingeniería de Sistemas / Computación en la Nube.
+Proyecto desarrollado por **Brahian Nova** como parte de su portafolio académico y profesional en Ingeniería de Sistemas / Computación en la Nube.
 
-* **GitHub**: [@TU_USUARIO](https://github.com/TU_USUARIO)
-* **Proyecto**: Arquitectura Distribuida y Observabilidad Cloud Pong
+* **Desarrollador**: [Brahian Nova](https://github.com/Brahian-Nova)
+* **GitHub**: [@Brahian-Nova](https://github.com/Brahian-Nova)
+* **Repositorio**: [proyecto-cloud-pong](https://github.com/Brahian-Nova/proyecto-cloud-pong)
